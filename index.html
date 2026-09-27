@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Detektif Perisai Pancasila - Game Interaktif PID</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Fredoka', 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #fef3c7 100%);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .pid-button {
+            transition: all 0.15s ease-out;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+        }
+        .pid-button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.15);
+        }
+
+        .bounce-gentle {
+            animation: bounceGentle 2s infinite ease-in-out;
+        }
+
+        @keyframes bounceGentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* Pulse highlight for touch targets on PID */
+        .touch-highlight {
+            animation: pulseGlow 1.5s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            from { box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+            to { box-shadow: 0 0 22px rgba(59, 130, 246, 0.9); }
+        }
+
+        /* Custom Drag & Touch styling */
+        .symbol-card {
+            cursor: pointer;
+            touch-action: none;
+        }
+        .symbol-card.selected {
+            ring: 4px;
+            ring-color: #3b82f6;
+            transform: scale(1.08);
+        }
+
+        .drop-zone.hovered {
+            background-color: #fef08a !important;
+            border-color: #eab308 !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800 overflow-x-hidden">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="bg-white/90 backdrop-blur-md border-b-4 border-amber-400 p-3 shadow-md flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center space-x-3">
+            <span class="text-3xl lg:text-4xl">🛡️</span>
+            <div>
+                <h1 class="text-xl lg:text-2xl font-black text-amber-600 leading-tight">DETEKTIF PERISAI PANCASILA</h1>
+                <p class="text-xs lg:text-sm font-semibold text-slate-500">Pendidikan Pancasila SD Kelas 1 • Fase A</p>
+            </div>
+        </div>
+
+        <!-- Role Display Tag -->
+        <div id="role-tag" class="hidden md:flex items-center bg-sky-100 border-2 border-sky-400 px-3 py-1.5 rounded-2xl shadow-sm">
+            <span class="text-xl mr-2">👉</span>
+            <div>
+                <div class="text-[10px] uppercase tracking-wider text-sky-600 font-bold">Giliran Sentuh PID:</div>
+                <div id="role-text" class="text-sm font-extrabold text-sky-900">Detektif 1 (Eksekutor)</div>
+            </div>
+        </div>
+
+        <!-- Controls (Sound & TTS) -->
+        <div class="flex items-center space-x-2">
+            <button onclick="toggleAudioReadout()" id="tts-btn" class="bg-amber-100 hover:bg-amber-200 border-2 border-amber-400 text-amber-800 px-3 py-1.5 rounded-xl text-xs lg:text-sm font-bold flex items-center space-x-1 pid-button">
+                <span id="tts-icon">🔊</span>
+                <span class="hidden sm:inline">Suara Teks</span>
+            </button>
+            <button onclick="toggleMute()" id="sound-btn" class="bg-emerald-100 hover:bg-emerald-200 border-2 border-emerald-400 text-emerald-800 px-3 py-1.5 rounded-xl text-xs lg:text-sm font-bold flex items-center space-x-1 pid-button">
+                <span id="sound-icon">🎵</span>
+                <span class="hidden sm:inline">Efek Suara</span>
+            </button>
+            <button onclick="goToHome()" class="bg-slate-100 hover:bg-slate-200 border-2 border-slate-300 text-slate-700 px-3 py-1.5 rounded-xl text-xs lg:text-sm font-bold pid-button">
+                🏠 Beranda
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN APP CANVAS / SCREEN CONTAINERS -->
+    <main class="flex-grow flex items-center justify-center p-3 lg:p-6 max-w-7xl mx-auto w-full">
+
+        <!-- SCREEN 0: START / HOME -->
+        <section id="screen-home" class="w-full max-w-4xl bg-white rounded-3xl p-6 lg:p-10 shadow-2xl border-4 border-sky-300 text-center space-y-6">
+            <div class="inline-block bg-amber-100 border-2 border-amber-300 text-amber-800 px-4 py-1.5 rounded-full font-extrabold text-sm uppercase tracking-wide">
+                🔍 Petualangan Kelompok
+            </div>
+            
+            <h2 class="text-3xl lg:text-5xl font-black text-slate-800 leading-tight">
+                Selamat Datang, <span class="text-amber-500">Detektif Cilik!</span> 🛡️
+            </h2>
+            
+            <p class="text-lg lg:text-xl text-slate-600 max-w-2xl mx-auto font-semibold">
+                Mari bantu menjaga <span class="text-sky-600 font-extrabold">Perisai Pancasila</span> dengan menyelesaikan 5 Misi Rahasia bersama kelompokmu!
+            </p>
+
+            <!-- 5 Pancasila Symbol Display Row -->
+            <div class="grid grid-cols-5 gap-2 lg:gap-4 max-w-2xl mx-auto py-2">
+                <div class="bg-slate-900 border-2 border-amber-400 rounded-2xl p-2 flex flex-col items-center justify-center">
+                    <span class="text-3xl lg:text-4xl">⭐</span>
+                    <span class="text-[10px] text-amber-300 font-bold mt-1">Sila 1</span>
+                </div>
+                <div class="bg-red-50 border-2 border-red-300 rounded-2xl p-2 flex flex-col items-center justify-center">
+                    <span class="text-3xl lg:text-4xl">⛓️</span>
+                    <span class="text-[10px] text-red-600 font-bold mt-1">Sila 2</span>
+                </div>
+                <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-2 flex flex-col items-center justify-center">
+                    <span class="text-3xl lg:text-4xl">🌳</span>
+                    <span class="text-[10px] text-emerald-700 font-bold mt-1">Sila 3</span>
+                </div>
+                <div class="bg-rose-50 border-2 border-rose-300 rounded-2xl p-2 flex flex-col items-center justify-center">
+                    <span class="text-3xl lg:text-4xl">🐂</span>
+                    <span class="text-[10px] text-rose-700 font-bold mt-1">Sila 4</span>
+                </div>
+                <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-2 flex flex-col items-center justify-center">
+                    <span class="text-3xl lg:text-4xl">🌾</span>
+                    <span class="text-[10px] text-amber-700 font-bold mt-1">Sila 5</span>
+                </div>
+            </div>
+
+            <!-- Role Card Setup Guide -->
+            <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-4 text-left max-w-2xl mx-auto">
+                <h3 class="font-extrabold text-sky-900 text-base flex items-center space-x-2">
+                    <span>🤝</span> <span>Pembagian Peran Kelompok (Bergantian Setiap Ronde):</span>
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mt-2 text-xs font-bold text-sky-800">
+                    <div class="bg-white p-2 rounded-xl border border-sky-200">1️⃣ Pengamat</div>
+                    <div class="bg-white p-2 rounded-xl border border-sky-200">2️⃣ Pemberi Ide</div>
+                    <div class="bg-white p-2 rounded-xl border border-sky-200 text-amber-700 bg-amber-50">3️⃣ Pemain PID</div>
+                    <div class="bg-white p-2 rounded-xl border border-sky-200">4️⃣ Pengecek</div>
+                    <div class="bg-white p-2 rounded-xl border border-sky-200">5️⃣ Alasan/Juru Bicara</div>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="pid-button bg-amber-500 hover:bg-amber-600 text-white font-black text-2xl lg:text-3xl px-10 py-5 rounded-3xl shadow-lg border-b-8 border-amber-700 w-full sm:w-auto inline-flex items-center justify-center space-x-3 bounce-gentle">
+                <span>🚀 MULAI MISI DETEKTIF</span>
+            </button>
+        </section>
+
+        <!-- SCREEN 1: RONDE 1 - PILIH TEPAT -->
+        <section id="screen-round1" class="hidden w-full max-w-4xl bg-white rounded-3xl p-6 lg:p-8 shadow-2xl border-4 border-sky-300 flex-col space-y-6">
+            <div class="flex justify-between items-center border-b-2 border-slate-100 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-emerald-500 text-white text-xs font-black px-3 py-1 rounded-full uppercase">Ronde 1 dari 5</span>
+                    <h2 class="text-xl lg:text-2xl font-extrabold text-slate-800">🟢 PILIH TEPAT</h2>
+                </div>
+                <div class="bg-amber-100 text-amber-800 font-extrabold text-sm px-3 py-1 rounded-xl">
+                    Skor: <span id="score-r1">0</span>
+                </div>
+            </div>
+
+            <!-- Question Indicator -->
+            <div class="flex justify-center space-x-2" id="r1-dots">
+                <!-- Dots generated in JS -->
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-6 text-center flex flex-col items-center justify-center space-y-4 min-h-[220px]">
+                <p id="r1-instruction" class="text-xl lg:text-2xl font-extrabold text-slate-700">Simbol apakah ini?</p>
+                <div id="r1-symbol-display" class="p-4 bg-white border-4 border-amber-300 rounded-3xl shadow-inner text-6xl lg:text-8xl my-2">
+                    ⭐
+                </div>
+                <button onclick="readCurrentQuestion()" class="text-xs bg-sky-100 text-sky-700 font-bold px-3 py-1 rounded-full border border-sky-300 flex items-center space-x-1">
+                    <span>📢 Dengar Soal</span>
+                </button>
+            </div>
+
+            <!-- Choices Grid -->
+            <div id="r1-choices" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Buttons injected by JS -->
+            </div>
+        </section>
+
+        <!-- SCREEN 2: RONDE 2 - SUSUN TEPAT -->
+        <section id="screen-round2" class="hidden w-full max-w-5xl bg-white rounded-3xl p-6 lg:p-8 shadow-2xl border-4 border-blue-400 flex-col space-y-5">
+            <div class="flex justify-between items-center border-b-2 border-slate-100 pb-2">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-blue-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase">Ronde 2 dari 5</span>
+                    <h2 class="text-xl lg:text-2xl font-extrabold text-slate-800">🔵 SUSUN TEPAT PERISAI</h2>
+                </div>
+                <div class="bg-amber-100 text-amber-800 font-extrabold text-sm px-3 py-1 rounded-xl">
+                    Skor: <span id="score-r2">0</span>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 p-3 rounded-2xl text-center text-blue-900 text-sm font-bold flex items-center justify-center space-x-2">
+                <span>💬</span>
+                <span><strong>Pertanyaan Guru/Diskusi:</strong> "Menurut kelompokmu, di mana posisi simbol ini pada perisai? Mengapa?"</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                <!-- Garuda Shield Canvas / Droppable Slots -->
+                <div class="md:col-span-7 bg-amber-50/50 p-4 rounded-3xl border-2 border-amber-200 flex flex-col items-center justify-center relative">
+                    <div class="text-center font-extrabold text-slate-700 mb-2 text-sm">🎯 Sentuh / Seret Simbol ke Posisi yang Tepat:</div>
+                    
+                    <!-- Shield Graphic Container -->
+                    <div class="relative w-[300px] h-[340px] bg-red-700 border-8 border-yellow-400 rounded-b-[120px] rounded-t-3xl shadow-xl p-3 grid grid-cols-2 grid-rows-2 gap-2 overflow-hidden">
+                        
+                        <!-- Top Left Slot: Sila 4 (Banteng) -->
+                        <div data-slot="4" class="drop-zone bg-red-800/80 border-2 border-dashed border-yellow-200 rounded-tl-2xl rounded-br-2xl flex flex-col items-center justify-center relative p-1 transition-all">
+                            <span class="text-[10px] font-bold text-yellow-200 uppercase absolute top-1 left-2">Kiri Atas (Sila 4)</span>
+                            <div class="slot-content text-4xl">❓</div>
+                        </div>
+
+                        <!-- Top Right Slot: Sila 3 (Pohon Beringin) -->
+                        <div data-slot="3" class="drop-zone bg-white border-2 border-dashed border-slate-300 rounded-tr-2xl rounded-bl-2xl flex flex-col items-center justify-center relative p-1 transition-all">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase absolute top-1 right-2">Kanan Atas (Sila 3)</span>
+                            <div class="slot-content text-4xl">❓</div>
+                        </div>
+
+                        <!-- Bottom Left Slot: Sila 5 (Padi Kapas) -->
+                        <div data-slot="5" class="drop-zone bg-white border-2 border-dashed border-slate-300 rounded-bl-3xl rounded-tr-2xl flex flex-col items-center justify-center relative p-1 transition-all">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase absolute bottom-1 left-2">Kiri Bawah (Sila 5)</span>
+                            <div class="slot-content text-4xl">❓</div>
+                        </div>
+
+                        <!-- Bottom Right Slot: Sila 2 (Rantai) -->
+                        <div data-slot="2" class="drop-zone bg-red-800/80 border-2 border-dashed border-yellow-200 rounded-br-3xl rounded-tl-2xl flex flex-col items-center justify-center relative p-1 transition-all">
+                            <span class="text-[10px] font-bold text-yellow-200 uppercase absolute bottom-1 right-2">Kanan Bawah (Sila 2)</span>
+                            <div class="slot-content text-4xl">❓</div>
+                        </div>
+
+                        <!-- Center Slot: Sila 1 (Bintang) -->
+                        <div data-slot="1" class="drop-zone absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-slate-900 border-4 border-yellow-400 rounded-2xl shadow-2xl flex flex-col items-center justify-center z-10 transition-all">
+                            <span class="text-[9px] font-bold text-yellow-300 uppercase absolute top-0.5">Tengah (Sila 1)</span>
+                            <div class="slot-content text-4xl mt-2">❓</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Symbols Dock -->
+                <div class="md:col-span-5 flex flex-col space-y-3">
+                    <div class="font-extrabold text-slate-700 text-center md:text-left text-sm">Pilihan Simbol (Pilih & Tap Posisi):</div>
+                    <div id="r2-symbol-dock" class="grid grid-cols-2 gap-3">
+                        <!-- Symbol choices rendered here -->
+                    </div>
+                    <button onclick="checkRound2Shield()" class="pid-button bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 px-6 rounded-2xl border-b-4 border-emerald-700 text-lg w-full mt-2">
+                        ✅ PERIKSA HASIL SUSUNAN
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: RONDE 3 - DETEKTIF KESALAHAN -->
+        <section id="screen-round3" class="hidden w-full max-w-4xl bg-white rounded-3xl p-6 lg:p-8 shadow-2xl border-4 border-amber-400 flex-col space-y-5">
+            <div class="flex justify-between items-center border-b-2 border-slate-100 pb-2">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-amber-500 text-white text-xs font-black px-3 py-1 rounded-full uppercase">Ronde 3 dari 5</span>
+                    <h2 class="text-xl lg:text-2xl font-extrabold text-slate-800">🟠 DETEKTIF KESALAHAN</h2>
+                </div>
+                <div class="bg-amber-100 text-amber-800 font-extrabold text-sm px-3 py-1 rounded-xl">
+                    Skor: <span id="score-r3">0</span>
+                </div>
+            </div>
+
+            <div class="text-center space-y-2">
+                <h3 class="text-xl font-black text-slate-800" id="r3-title">Tantangan Kesalahan #1</h3>
+                <p class="text-base font-bold text-slate-600" id="r3-desc">Amati perisai di bawah ini! Apakah posisinya sudah benar?</p>
+            </div>
+
+            <!-- Misplaced Shield Card -->
+            <div class="bg-amber-50 border-2 border-amber-200 rounded-3xl p-4 flex flex-col md:flex-row items-center justify-center gap-6">
+                <!-- Visual Display of Shield State -->
+                <div id="r3-shield-preview" class="relative w-[220px] h-[250px] bg-red-700 border-4 border-yellow-400 rounded-b-[90px] rounded-t-2xl shadow-lg p-2 grid grid-cols-2 grid-rows-2 gap-1">
+                    <!-- Dynamic slots injected by JS -->
+                </div>
+
+                <div class="flex flex-col space-y-3 w-full md:w-auto">
+                    <button onclick="answerRound3(true)" class="pid-button bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-lg p-4 rounded-2xl border-b-4 border-emerald-700 flex items-center justify-center space-x-2">
+                        <span>✅ YA, SUDAH BENAR</span>
+                    </button>
+                    <button onclick="answerRound3(false)" class="pid-button bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-lg p-4 rounded-2xl border-b-4 border-rose-700 flex items-center justify-center space-x-2">
+                        <span>🔧 SALAH, PERLU DIPERBAIKI!</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- HOTS Explanation Card (Shown when error fixed) -->
+            <div id="r3-reasoning-box" class="hidden bg-sky-50 border-2 border-sky-300 p-4 rounded-2xl text-center space-y-2">
+                <div class="font-black text-sky-900 text-lg">💡 Pertanyaan Penalaran (HOTS):</div>
+                <p id="r3-hots-question" class="text-slate-700 font-bold">"Mengapa kamu memindahkan simbol tersebut ke posisi yang baru?"</p>
+                <div class="text-xs text-sky-700 font-semibold">(Guru meminta salah satu anggota kelompok memberikan penjelasan secara lisan)</div>
+                <button onclick="nextRound3Challenge()" class="pid-button bg-sky-500 text-white font-black px-6 py-2 rounded-xl text-base mt-2 inline-block">
+                    Tantangan Berikutnya ➡️
+                </button>
+            </div>
+        </section>
+
+        <!-- SCREEN 4: RONDE 4 - SIMBOL DALAM KEHIDUPAN -->
+        <section id="screen-round4" class="hidden w-full max-w-4xl bg-white rounded-3xl p-6 lg:p-8 shadow-2xl border-4 border-purple-400 flex-col space-y-5">
+            <div class="flex justify-between items-center border-b-2 border-slate-100 pb-2">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-purple-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase">Ronde 4 dari 5</span>
+                    <h2 class="text-xl lg:text-2xl font-extrabold text-slate-800">🟣 SIMBOL DALAM KEHIDUPAN</h2>
+                </div>
+                <div class="bg-amber-100 text-amber-800 font-extrabold text-sm px-3 py-1 rounded-xl">
+                    Skor: <span id="score-r4">0</span>
+                </div>
+            </div>
+
+            <!-- Situation Display Card -->
+            <div class="bg-purple-50 border-2 border-purple-200 rounded-3xl p-6 text-center space-y-4">
+                <div class="text-5xl" id="r4-illustration">🙏</div>
+                <div class="inline-block bg-purple-200 text-purple-800 px-3 py-1 rounded-full text-xs font-extrabold uppercase">Situasi Kehidupan</div>
+                <h3 id="r4-situation-text" class="text-2xl font-black text-slate-800 max-w-xl mx-auto">
+                    "Sebelum belajar, Rani dan teman-temannya berdoa terlebih dahulu."
+                </h3>
+                <p class="text-purple-900 font-bold text-sm">Simbol Pancasila manakah yang sesuai dengan tindakan di atas?</p>
+            </div>
+
+            <!-- Symbol Choices -->
+            <div id="r4-symbol-choices" class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Follow-up Oral Discussion Prompt -->
+            <div id="r4-discussion-box" class="hidden bg-amber-50 border-2 border-amber-300 p-4 rounded-2xl text-center space-y-2">
+                <div class="font-extrabold text-amber-900 text-base">🗣️ Umpan Balik & Diskusi Lisan:</div>
+                <p class="text-slate-700 font-bold text-lg" id="r4-feedback-text">"Mengapa kelompokmu memilih simbol tersebut?"</p>
+                <div class="text-xs text-amber-800 font-semibold">Guru memberikan penguatan atas jawaban murid.</div>
+                <button onclick="nextRound4Situation()" class="pid-button bg-amber-500 text-white font-black px-6 py-2 rounded-xl text-base mt-2">
+                    Lanjut Situasi Berikutnya ➡️
+                </button>
+            </div>
+        </section>
+
+        <!-- SCREEN 5: RONDE 5 - TANTANGAN CEPAT -->
+        <section id="screen-round5" class="hidden w-full max-w-4xl bg-white rounded-3xl p-6 lg:p-8 shadow-2xl border-4 border-rose-400 flex-col space-y-5">
+            <div class="flex justify-between items-center border-b-2 border-slate-100 pb-2">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-rose-500 text-white text-xs font-black px-3 py-1 rounded-full uppercase">Ronde 5 dari 5</span>
+                    <h2 class="text-xl lg:text-2xl font-extrabold text-slate-800">🔴 TANTANGAN CEPAT (10 Detik)</h2>
+                </div>
+                <div class="bg-amber-100 text-amber-800 font-extrabold text-sm px-3 py-1 rounded-xl">
+                    Skor: <span id="score-r5">0</span>
+                </div>
+            </div>
+
+            <!-- Timer Progress Bar -->
+            <div class="space-y-1">
+                <div class="flex justify-between font-black text-sm text-slate-600">
+                    <span>⏱️ Batas Waktu: <span id="r5-timer-text" class="text-rose-600 text-lg font-black">10</span> detik</span>
+                    <span id="r5-q-number">Soal 1 dari 5</span>
+                </div>
+                <div class="w-full bg-slate-200 h-4 rounded-full overflow-hidden border border-slate-300">
+                    <div id="r5-timer-bar" class="bg-rose-500 h-full w-full transition-all duration-1000 ease-linear"></div>
+                </div>
+            </div>
+
+            <!-- Quick Quiz Card -->
+            <div class="bg-rose-50 border-2 border-rose-200 rounded-3xl p-6 text-center flex flex-col justify-center items-center space-y-4 min-h-[180px]">
+                <h3 id="r5-question-text" class="text-2xl lg:text-3xl font-black text-slate-800">
+                    Simbol Sila ke-1 adalah...
+                </h3>
+            </div>
+
+            <!-- Fast Choices -->
+            <div id="r5-choices" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Fast choices injected in JS -->
+            </div>
+        </section>
+
+        <!-- SCREEN 6: HASIL AKHIR & PENGHARGAAN -->
+        <section id="screen-result" class="hidden w-full max-w-4xl bg-white rounded-3xl p-6 lg:p-8 shadow-2xl border-4 border-amber-400 flex-col space-y-6 text-center">
+            <div class="space-y-2">
+                <span class="text-5xl">🏆</span>
+                <h2 class="text-3xl lg:text-4xl font-black text-amber-600">HASIL DETEKTIF PERISAI PANCASILA</h2>
+                <p class="text-slate-600 font-bold">Selamat! Kelompokmu telah menyelesaikan seluruh tantangan dengan hebat!</p>
+            </div>
+
+            <!-- Badge Award Box -->
+            <div class="bg-amber-50 border-2 border-amber-300 rounded-3xl p-6 max-w-md mx-auto space-y-2 shadow-inner">
+                <div class="text-xs font-bold text-amber-800 uppercase tracking-widest">Penghargaan Kelompok</div>
+                <div id="badge-title" class="text-3xl font-black text-amber-600">🌟 Detektif Hebat & Kompak</div>
+                <p id="badge-desc" class="text-sm font-semibold text-slate-700">Bekerja sama dengan teliti dan pantang menyerah!</p>
+            </div>
+
+            <!-- Round Score Tally Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 max-w-2xl mx-auto">
+                <div class="bg-slate-50 border p-3 rounded-2xl">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase">Ronde 1</div>
+                    <div id="tally-r1" class="text-xl font-black text-slate-800">50</div>
+                </div>
+                <div class="bg-slate-50 border p-3 rounded-2xl">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase">Ronde 2</div>
+                    <div id="tally-r2" class="text-xl font-black text-slate-800">50</div>
+                </div>
+                <div class="bg-slate-50 border p-3 rounded-2xl">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase">Ronde 3</div>
+                    <div id="tally-r3" class="text-xl font-black text-slate-800">40</div>
+                </div>
+                <div class="bg-slate-50 border p-3 rounded-2xl">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase">Ronde 4</div>
+                    <div id="tally-r4" class="text-xl font-black text-slate-800">50</div>
+                </div>
+                <div class="bg-slate-50 border p-3 rounded-2xl">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase">Ronde 5</div>
+                    <div id="tally-r5" class="text-xl font-black text-slate-800">50</div>
+                </div>
+            </div>
+
+            <div class="bg-emerald-100 border border-emerald-300 rounded-2xl p-4 max-w-xs mx-auto">
+                <div class="text-xs font-bold text-emerald-800 uppercase">Total Poin Kelompok</div>
+                <div id="total-score" class="text-4xl font-black text-emerald-700">240 Poin</div>
+            </div>
+
+            <button onclick="goToReflection()" class="pid-button bg-amber-500 hover:bg-amber-600 text-white font-black text-xl px-8 py-4 rounded-2xl border-b-4 border-amber-700 w-full sm:w-auto inline-flex items-center justify-center space-x-2">
+                <span>💭 LANJUT KE REFLEKSI KELOMPOK</span>
+            </button>
+        </section>
+
+        <!-- SCREEN 7: REFLEKSI KELOMPOK -->
+        <section id="screen-reflection" class="hidden w-full max-w-4xl bg-white rounded-3xl p-6 lg:p-8 shadow-2xl border-4 border-emerald-400 flex-col space-y-6">
+            <div class="text-center space-y-2 border-b-2 border-slate-100 pb-3">
+                <h2 class="text-3xl font-black text-emerald-700">💭 REFLEKSI DETEKTIF PANCASILA</h2>
+                <p class="text-slate-600 font-bold">Mari ungkapkan perasaan dan pengalaman belajar kelompokmu!</p>
+            </div>
+
+            <!-- Mood Selector -->
+            <div class="space-y-3 text-center">
+                <p class="font-black text-lg text-slate-800">1. Bagaimana perasaan kelompokmu setelah bermain?</p>
+                <div class="flex justify-center space-x-4">
+                    <button onclick="selectMood(this)" class="mood-btn border-4 border-transparent p-4 bg-emerald-50 rounded-3xl text-4xl hover:bg-emerald-100 pid-button">
+                        😊 <div class="text-xs font-bold mt-1 text-emerald-800">Senang</div>
+                    </button>
+                    <button onclick="selectMood(this)" class="mood-btn border-4 border-transparent p-4 bg-amber-50 rounded-3xl text-4xl hover:bg-amber-100 pid-button">
+                        😐 <div class="text-xs font-bold mt-1 text-amber-800">Cukup</div>
+                    </button>
+                    <button onclick="selectMood(this)" class="mood-btn border-4 border-transparent p-4 bg-sky-50 rounded-3xl text-4xl hover:bg-sky-100 pid-button">
+                        🤔 <div class="text-xs font-bold mt-1 text-sky-800">Perlu Latihan</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Guided Discussion Questions for Class -->
+            <div class="bg-slate-50 border-2 border-slate-200 rounded-3xl p-5 space-y-3">
+                <div class="font-extrabold text-slate-800 text-base flex items-center space-x-2">
+                    <span>📢</span> <span>Pertanyaan Refleksi Lisan Bersama Guru:</span>
+                </div>
+                <ul class="list-disc list-inside text-sm text-slate-700 font-semibold space-y-1 text-left">
+                    <li>Ronde permainan mana yang paling disukai kelompokmu?</li>
+                    <li>Bagian mana yang paling mudah dan mana yang terasa sulit?</li>
+                    <li>Bagaimana kelompokmu bekerja sama dan berbagi peran?</li>
+                    <li>Satu hal apa yang akan kalian lakukan di kelas untuk menerapkan nilai Pancasila?</li>
+                </ul>
+            </div>
+
+            <div class="flex justify-center space-x-4">
+                <button onclick="goToHome()" class="pid-button bg-sky-500 hover:bg-sky-600 text-white font-black text-lg px-8 py-4 rounded-2xl border-b-4 border-sky-700">
+                    🔄 MAIN LAGI DARI AWAL
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- CUSTOM PID FEEDBACK MODAL (No Alert / No Confirm) -->
+    <div id="pid-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 lg:p-8 max-w-md w-full border-4 border-amber-400 shadow-2xl text-center space-y-4 animate-bounce-short">
+            <div id="modal-icon" class="text-6xl">🎉</div>
+            <h3 id="modal-title" class="text-2xl font-black text-slate-800">Tepat Sekali!</h3>
+            <p id="modal-body" class="text-base text-slate-600 font-bold">Kamu dan kelompokmu sangat teliti!</p>
+            <div class="pt-2">
+                <button id="modal-action-btn" onclick="closeModal()" class="pid-button bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-lg px-8 py-3 rounded-2xl border-b-4 border-amber-700 w-full">
+                    Lanjut 👍
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           1. DATA DEFINITIONS & GAME STATE
+           ========================================================================== */
+        const SYMBOLS = {
+            1: { name: 'Bintang', symbol: '⭐', sila: 'Sila ke-1', color: 'bg-slate-900 text-yellow-300' },
+            2: { name: 'Rantai', symbol: '⛓️', sila: 'Sila ke-2', color: 'bg-red-100 text-red-600' },
+            3: { name: 'Pohon Beringin', symbol: '🌳', sila: 'Sila ke-3', color: 'bg-emerald-100 text-emerald-700' },
+            4: { name: 'Kepala Banteng', symbol: 'ox', symbolEmoji: '🐂', sila: 'Sila ke-4', color: 'bg-rose-100 text-rose-800' },
+            5: { name: 'Padi dan Kapas', symbol: '🌾', sila: 'Sila ke-5', color: 'bg-amber-100 text-amber-800' }
+        };
+
+        const ROLES = [
+            'Detektif 1 (Pengamat)',
+            'Detektif 2 (Pemberi Ide)',
+            'Detektif 3 (Pemain PID)',
+            'Detektif 4 (Pengecek)',
+            'Detektif 5 (Juru Bicara)'
+        ];
+
+        let gameState = {
+            currentRound: 0,
+            scores: { r1: 0, r2: 0, r3: 0, r4: 0, r5: 0 },
+            audioEnabled: true,
+            ttsEnabled: true,
+            // Round 1 state
+            r1Index: 0,
+            r1Questions: [
+                { symbolId: 1, options: ['Bintang', 'Rantai', 'Kepala Banteng'] },
+                { symbolId: 2, options: ['Padi dan Kapas', 'Rantai', 'Pohon Beringin'] },
+                { symbolId: 3, options: ['Pohon Beringin', 'Bintang', 'Kepala Banteng'] },
+                { symbolId: 4, options: ['Bintang', 'Padi dan Kapas', 'Kepala Banteng'] },
+                { symbolId: 5, options: ['Rantai', 'Padi dan Kapas', 'Pohon Beringin'] }
+            ],
+            // Round 2 state
+            r2Placed: { 1: null, 2: null, 3: null, 4: null, 5: null },
+            r2SelectedSymbol: null,
+            // Round 3 state
+            r3Index: 0,
+            r3Challenges: [
+                {
+                    title: 'Tantangan Kesalahan #1',
+                    layout: { 1: 3, 2: 2, 3: 1, 4: 4, 5: 5 }, // Bintang & Beringin swapped
+                    isCorrect: false,
+                    explanation: 'Bintang seharusnya berada di tengah (Sila 1), bukan Pohon Beringin!'
+                },
+                {
+                    title: 'Tantangan Kesalahan #2',
+                    layout: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, // All correct
+                    isCorrect: true,
+                    explanation: 'Perisai ini sudah tepat! Bintang di tengah, Banteng kiri atas, Beringin kanan atas, Padi Kapas kiri bawah, Rantai kanan bawah.'
+                },
+                {
+                    title: 'Tantangan Kesalahan #3',
+                    layout: { 1: 1, 2: 5, 3: 3, 4: 4, 5: 2 }, // Rantai & Padi Kapas swapped
+                    isCorrect: false,
+                    explanation: 'Rantai (Sila 2) seharusnya ada di Kanan Bawah, dan Padi Kapas (Sila 5) di Kiri Bawah!'
+                }
+            ],
+            // Round 4 state
+            r4Index: 0,
+            r4Situations: [
+                {
+                    illustration: '🙏',
+                    text: 'Sebelum belajar di kelas, Rani dan teman-teman selalu berdoa terlebih dahulu.',
+                    correctSymbolId: 1,
+                    feedback: 'Berdoa adalah contoh pengamalan Sila ke-1 (Bintang: Ketuhanan Yang Maha Esa).'
+                },
+                {
+                    illustration: '🤝',
+                    text: 'Budi menolong temannya yang terjatuh di halaman sekolah.',
+                    correctSymbolId: 2,
+                    feedback: 'Saling menolong sesama teman sesuai nilai Sila ke-2 (Rantai: Kemanusiaan yang Adil dan Beradab).'
+                },
+                {
+                    illustration: '🎨',
+                    text: 'Anak-anak kelas 1 bermain bersama tanpa membeda-bedakan teman.',
+                    correctSymbolId: 3,
+                    feedback: 'Menjaga kerukunan dan kebersamaan sesuai Sila ke-3 (Pohon Beringin: Persatuan Indonesia).'
+                },
+                {
+                    illustration: '🗣️',
+                    text: 'Kelompok berdiskusi secara damai untuk menentukan jenis permainan.',
+                    correctSymbolId: 4,
+                    feedback: 'Musyawarah dan berdiskusi adalah ciri Sila ke-4 (Kepala Banteng).'
+                },
+                {
+                    illustration: '🍎',
+                    text: 'Siti membagi makanan secara adil kepada teman-temannya.',
+                    correctSymbolId: 5,
+                    feedback: 'Berbagi adil mencerminkan Sila ke-5 (Padi dan Kapas: Keadilan Sosial).'
+                }
+            ],
+            // Round 5 state
+            r5Index: 0,
+            r5Timer: null,
+            r5TimeLeft: 10,
+            r5Questions: [
+                { q: 'Simbol Sila ke-1 adalah...', correct: 'Bintang', options: ['Bintang', 'Rantai', 'Kepala Banteng'] },
+                { q: 'Simbol Sila ke-3 adalah...', correct: 'Pohon Beringin', options: ['Padi dan Kapas', 'Pohon Beringin', 'Rantai'] },
+                { q: 'Simbol Sila ke-4 adalah...', correct: 'Kepala Banteng', options: ['Kepala Banteng', 'Bintang', 'Rantai'] },
+                { q: 'Simbol Sila ke-5 adalah...', correct: 'Padi dan Kapas', options: ['Padi dan Kapas', 'Bintang', 'Pohon Beringin'] },
+                { q: 'Simbol Sila ke-2 adalah...', correct: 'Rantai', options: ['Rantai', 'Kepala Banteng', 'Pohon Beringin'] }
+            ]
+        };
+
+        /* ==========================================================================
+           2. AUDIO SYNTHESIZER (WEB AUDIO API)
+           ========================================================================== */
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!gameState.audioEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15); // E5
+                osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.3); // G5
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                osc.start(now);
+                osc.stop(now + 0.45);
+            } else if (type === 'wrong') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, now); // A3
+                osc.frequency.exponentialRampToValueAtTime(164.81, now + 0.2); // E3
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'tick') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, now);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'victory') {
+                // Happy fanfare
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.value = freq;
+                    g.gain.setValueAtTime(0.2, now + i * 0.12);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.12 + 0.3);
+                    o.start(now + i * 0.12);
+                    o.stop(now + i * 0.12 + 0.3);
+                });
+            }
+        }
+
+        function speakText(text) {
+            if (!gameState.ttsEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID';
+            utterance.rate = 0.9; // Friendly slower rate for grade 1
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleAudioReadout() {
+            gameState.ttsEnabled = !gameState.ttsEnabled;
+            const btnIcon = document.getElementById('tts-icon');
+            btnIcon.textContent = gameState.ttsEnabled ? '🔊' : '🔇';
+            showModal('Pengaturan Suara', gameState.ttsEnabled ? 'Suara pembaca teks AKTIF.' : 'Suara pembaca teks DIMATIKAN.');
+        }
+
+        function toggleMute() {
+            gameState.audioEnabled = !gameState.audioEnabled;
+            document.getElementById('sound-icon').textContent = gameState.audioEnabled ? '🎵' : '🔇';
+        }
+
+        /* ==========================================================================
+           3. ROUTING & SCREEN CONTROLLER
+           ========================================================================== */
+        function hideAllScreens() {
+            const screens = ['screen-home', 'screen-round1', 'screen-round2', 'screen-round3', 'screen-round4', 'screen-round5', 'screen-result', 'screen-reflection'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+        }
+
+        function showScreen(screenId) {
+            hideAllScreens();
+            const target = document.getElementById(screenId);
+            if (target) {
+                target.classList.remove('hidden');
+                target.classList.add('flex');
+            }
+        }
+
+        function updateRoleDisplay(roundNum) {
+            const roleIdx = (roundNum - 1) % ROLES.length;
+            const roleEl = document.getElementById('role-text');
+            if (roleEl) {
+                roleEl.textContent = `${ROLES[roleIdx]} (Sentuh PID)`;
+            }
+        }
+
+        function goToHome() {
+            clearInterval(gameState.r5Timer);
+            gameState.currentRound = 0;
+            showScreen('screen-home');
+            document.getElementById('role-tag').classList.add('hidden');
+        }
+
+        function startGame() {
+            document.getElementById('role-tag').classList.remove('hidden');
+            gameState.scores = { r1: 0, r2: 0, r3: 0, r4: 0, r5: 0 };
+            startRound1();
+        }
+
+        /* ==========================================================================
+           4. MODAL DIALOGS (Custom & Non-Blocking UI)
+           ========================================================================== */
+        function showModal(title, bodyText, icon = '🎉', callback = null) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').textContent = bodyText;
+            document.getElementById('modal-icon').textContent = icon;
+            const btn = document.getElementById('modal-action-btn');
+            btn.onclick = () => {
+                closeModal();
+                if (callback) callback();
+            };
+            document.getElementById('pid-modal').classList.remove('hidden');
+            speakText(`${title}. ${bodyText}`);
+        }
+
+        function closeModal() {
+            document.getElementById('pid-modal').classList.add('hidden');
+        }
+
+        /* ==========================================================================
+           5. RONDE 1: PILIH TEPAT
+           ========================================================================== */
+        function startRound1() {
+            gameState.currentRound = 1;
+            gameState.r1Index = 0;
+            gameState.scores.r1 = 0;
+            updateRoleDisplay(1);
+            showScreen('screen-round1');
+            renderRound1Question();
+        }
+
+        function renderRound1Question() {
+            const q = gameState.r1Questions[gameState.r1Index];
+            const symData = SYMBOLS[q.symbolId];
+
+            document.getElementById('score-r1').textContent = gameState.scores.r1;
+
+            // Render indicator dots
+            const dotsContainer = document.getElementById('r1-dots');
+            dotsContainer.innerHTML = '';
+            gameState.r1Questions.forEach((_, idx) => {
+                const dot = document.createElement('div');
+                dot.className = `w-4 h-4 rounded-full border-2 ${idx === gameState.r1Index ? 'bg-amber-500 border-amber-600 scale-125' : 'bg-slate-200 border-slate-300'}`;
+                dotsContainer.appendChild(dot);
+            });
+
+            // Set symbol image
+            const displayBox = document.getElementById('r1-symbol-display');
+            displayBox.textContent = symData.symbolEmoji || symData.symbol;
+
+            // Render Choices
+            const choicesContainer = document.getElementById('r1-choices');
+            choicesContainer.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "pid-button bg-sky-100 hover:bg-sky-200 border-2 border-sky-400 text-sky-900 font-extrabold text-xl py-5 px-4 rounded-2xl flex items-center justify-center space-x-2";
+                btn.innerHTML = `<span>${opt}</span>`;
+                btn.onclick = () => handleRound1Choice(opt, symData.name);
+                choicesContainer.appendChild(btn);
+            });
+
+            speakText(`Soal ke ${gameState.r1Index + 1}. Simbol apakah ini?`);
+        }
+
+        function readCurrentQuestion() {
+            const q = gameState.r1Questions[gameState.r1Index];
+            const symData = SYMBOLS[q.symbolId];
+            speakText(`Simbol apakah ini? Pilihan jawaban: ${q.options.join(', ')}`);
+        }
+
+        function handleRound1Choice(selected, correct) {
+            if (selected === correct) {
+                playSound('correct');
+                gameState.scores.r1 += 10;
+                showModal('🎉 Tepat! Hebat, Detektif!', `Simbol ini adalah ${correct}.`, '⭐', () => {
+                    gameState.r1Index++;
+                    if (gameState.r1Index < gameState.r1Questions.length) {
+                        renderRound1Question();
+                    } else {
+                        startRound2();
+                    }
+                });
+            } else {
+                playSound('wrong');
+                showModal('🔎 Belum Tepat', 'Amati kembali gambarnya dan diskusikan lagi bersama kelompokmu!', '🧐');
+            }
+        }
+
+        /* ==========================================================================
+           6. RONDE 2: SUSUN TEPAT PERISAI (Drag / Touch Select)
+           ========================================================================== */
+        function startRound2() {
+            gameState.currentRound = 2;
+            gameState.scores.r2 = 0;
+            gameState.r2Placed = { 1: null, 2: null, 3: null, 4: null, 5: null };
+            gameState.r2SelectedSymbol = null;
+            updateRoleDisplay(2);
+            showScreen('screen-round2');
+            renderRound2Dock();
+            renderRound2Shield();
+            speakText("Ronde 2: Susun Tepat Perisai. Tempatkan kelima simbol pada posisi yang benar!");
+        }
+
+        function renderRound2Dock() {
+            const dock = document.getElementById('r2-symbol-dock');
+            dock.innerHTML = '';
+
+            Object.keys(SYMBOLS).forEach(id => {
+                const sym = SYMBOLS[id];
+                const isPlaced = Object.values(gameState.r2Placed).includes(parseInt(id));
+
+                const card = document.createElement('div');
+                card.className = `symbol-card p-3 rounded-2xl border-2 flex items-center space-x-3 transition-all ${isPlaced ? 'opacity-30 cursor-not-allowed bg-slate-100 border-slate-300' : 'bg-white border-amber-300 hover:border-amber-500 shadow-md'}`;
+                
+                if (gameState.r2SelectedSymbol === parseInt(id)) {
+                    card.classList.add('ring-4', 'ring-blue-500', 'bg-blue-50');
+                }
+
+                card.innerHTML = `
+                    <span class="text-3xl">${sym.symbolEmoji || sym.symbol}</span>
+                    <span class="font-extrabold text-xs text-slate-800">${sym.name}</span>
+                `;
+
+                if (!isPlaced) {
+                    card.onclick = () => {
+                        gameState.r2SelectedSymbol = parseInt(id);
+                        renderRound2Dock();
+                        playSound('tick');
+                    };
+                }
+
+                dock.appendChild(card);
+            });
+        }
+
+        function renderRound2Shield() {
+            const slots = document.querySelectorAll('#screen-round2 .drop-zone');
+            slots.forEach(slot => {
+                const slotNum = parseInt(slot.getAttribute('data-slot'));
+                const placedSymId = gameState.r2Placed[slotNum];
+
+                const contentDiv = slot.querySelector('.slot-content');
+                if (placedSymId) {
+                    const sym = SYMBOLS[placedSymId];
+                    contentDiv.innerHTML = `<span class="text-4xl animate-bounce-short">${sym.symbolEmoji || sym.symbol}</span>`;
+                } else {
+                    contentDiv.innerHTML = `<span class="text-4xl text-slate-300">❓</span>`;
+                }
+
+                slot.onclick = () => {
+                    if (gameState.r2SelectedSymbol) {
+                        // Place selected symbol into slot
+                        gameState.r2Placed[slotNum] = gameState.r2SelectedSymbol;
+                        gameState.r2SelectedSymbol = null;
+                        renderRound2Dock();
+                        renderRound2Shield();
+                        playSound('tick');
+                    } else if (gameState.r2Placed[slotNum]) {
+                        // Clear slot if tapped again
+                        gameState.r2Placed[slotNum] = null;
+                        renderRound2Dock();
+                        renderRound2Shield();
+                    }
+                };
+            });
+        }
+
+        function checkRound2Shield() {
+            let allCorrect = true;
+            let countPlaced = 0;
+
+            for (let slot = 1; slot <= 5; slot++) {
+                if (gameState.r2Placed[slot] !== null) countPlaced++;
+                if (gameState.r2Placed[slot] !== slot) {
+                    allCorrect = false;
+                }
+            }
+
+            if (countPlaced < 5) {
+                showModal('Belum Selesai', 'Pastikan semua 5 simbol sudah dipasang pada perisai ya!', '⚠️');
+                return;
+            }
+
+            if (allCorrect) {
+                playSound('victory');
+                gameState.scores.r2 = 50;
+                document.getElementById('score-r2').textContent = gameState.scores.r2;
+                showModal('🏆 Misi Berhasil!', 'Perisai Pancasila tersusun tepat! Luar biasa, Detektif!', '⭐', () => {
+                    startRound3();
+                });
+            } else {
+                playSound('wrong');
+                showModal('🔎 Ada Kesalahan', 'Ada simbol yang tempatnya belum tepat. Periksa kembali bersama kelompokmu!', '💡');
+            }
+        }
+
+        /* ==========================================================================
+           7. RONDE 3: DETEKTIF KESALAHAN
+           ========================================================================== */
+        function startRound3() {
+            gameState.currentRound = 3;
+            gameState.r3Index = 0;
+            gameState.scores.r3 = 0;
+            updateRoleDisplay(3);
+            showScreen('screen-round3');
+            renderRound3Challenge();
+        }
+
+        function renderRound3Challenge() {
+            const ch = gameState.r3Challenges[gameState.r3Index];
+            document.getElementById('r3-title').textContent = ch.title;
+            document.getElementById('score-r3').textContent = gameState.scores.r3;
+            document.getElementById('r3-reasoning-box').classList.add('hidden');
+
+            const preview = document.getElementById('r3-shield-preview');
+            preview.innerHTML = `
+                <div class="bg-red-800/80 rounded-tl-xl flex items-center justify-center p-1 text-3xl">${SYMBOLS[ch.layout[4]].symbolEmoji || SYMBOLS[ch.layout[4]].symbol}</div>
+                <div class="bg-white rounded-tr-xl flex items-center justify-center p-1 text-3xl">${SYMBOLS[ch.layout[3]].symbolEmoji || SYMBOLS[ch.layout[3]].symbol}</div>
+                <div class="bg-white rounded-bl-xl flex items-center justify-center p-1 text-3xl">${SYMBOLS[ch.layout[5]].symbolEmoji || SYMBOLS[ch.layout[5]].symbol}</div>
+                <div class="bg-red-800/80 rounded-br-xl flex items-center justify-center p-1 text-3xl">${SYMBOLS[ch.layout[2]].symbolEmoji || SYMBOLS[ch.layout[2]].symbol}</div>
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-slate-900 border-2 border-yellow-400 rounded-xl flex items-center justify-center text-3xl z-10">${SYMBOLS[ch.layout[1]].symbolEmoji || SYMBOLS[ch.layout[1]].symbol}</div>
+            `;
+
+            speakText(`${ch.title}. Amati perisai di layar. Apakah susunan ini sudah benar?`);
+        }
+
+        function answerRound3(chosenIsCorrect) {
+            const ch = gameState.r3Challenges[gameState.r3Index];
+
+            if (chosenIsCorrect === ch.isCorrect) {
+                playSound('correct');
+                gameState.scores.r3 += 15;
+                document.getElementById('score-r3').textContent = gameState.scores.r3;
+
+                if (!ch.isCorrect) {
+                    showModal('🔎 Kamu Menemukan Kesalahan!', ch.explanation, '💡', () => {
+                        document.getElementById('r3-reasoning-box').classList.remove('hidden');
+                        speakText("Mengapa kamu memindahkan atau menyebut susunan itu salah?");
+                    });
+                } else {
+                    showModal('🎉 Tepat Sekali!', 'Susunan perisai ini memang sudah tepat!', '✅', () => {
+                        nextRound3Challenge();
+                    });
+                }
+            } else {
+                playSound('wrong');
+                showModal('🔎 Amati Lebih Teliti', 'Coba periksa lagi setiap posisi simbol pada perisai.', '🧐');
+            }
+        }
+
+        function nextRound3Challenge() {
+            gameState.r3Index++;
+            if (gameState.r3Index < gameState.r3Challenges.length) {
+                renderRound3Challenge();
+            } else {
+                startRound4();
+            }
+        }
+
+        /* ==========================================================================
+           8. RONDE 4: SIMBOL DALAM KEHIDUPAN
+           ========================================================================== */
+        function startRound4() {
+            gameState.currentRound = 4;
+            gameState.r4Index = 0;
+            gameState.scores.r4 = 0;
+            updateRoleDisplay(4);
+            showScreen('screen-round4');
+            renderRound4Situation();
+        }
+
+        function renderRound4Situation() {
+            const sit = gameState.r4Situations[gameState.r4Index];
+            document.getElementById('score-r4').textContent = gameState.scores.r4;
+            document.getElementById('r4-illustration').textContent = sit.illustration;
+            document.getElementById('r4-situation-text').textContent = `"${sit.text}"`;
+            document.getElementById('r4-discussion-box').classList.add('hidden');
+
+            const container = document.getElementById('r4-symbol-choices');
+            container.innerHTML = '';
+
+            Object.keys(SYMBOLS).forEach(id => {
+                const sym = SYMBOLS[id];
+                const btn = document.createElement('button');
+                btn.className = "pid-button bg-white hover:bg-purple-50 border-2 border-purple-300 rounded-2xl p-3 flex flex-col items-center justify-center space-y-1 shadow-sm";
+                btn.innerHTML = `
+                    <span class="text-4xl">${sym.symbolEmoji || sym.symbol}</span>
+                    <span class="text-xs font-black text-purple-900">${sym.name}</span>
+                `;
+                btn.onclick = () => handleRound4Choice(parseInt(id));
+                container.appendChild(btn);
+            });
+
+            speakText(`Situasi: ${sit.text}. Simbol manakah yang sesuai?`);
+        }
+
+        function handleRound4Choice(chosenSymbolId) {
+            const sit = gameState.r4Situations[gameState.r4Index];
+
+            if (chosenSymbolId === sit.correctSymbolId) {
+                playSound('correct');
+                gameState.scores.r4 += 10;
+                document.getElementById('score-r4').textContent = gameState.scores.r4;
+
+                showModal('🎉 Jawaban Tepat!', sit.feedback, '🌟', () => {
+                    document.getElementById('r4-discussion-box').classList.remove('hidden');
+                    speakText("Mengapa kelompokmu memilih simbol tersebut? Jelaskan kepada Gurumu!");
+                });
+            } else {
+                playSound('wrong');
+                showModal('🔎 Coba Lagi', 'Pikirkan kembali hubungan sikap tersebut dengan arti simbol Pancasila!', '💡');
+            }
+        }
+
+        function nextRound4Situation() {
+            gameState.r4Index++;
+            if (gameState.r4Index < gameState.r4Situations.length) {
+                renderRound4Situation();
+            } else {
+                startRound5();
+            }
+        }
+
+        /* ==========================================================================
+           9. RONDE 5: TANTANGAN CEPAT (10-Second Timer)
+           ========================================================================== */
+        function startRound5() {
+            gameState.currentRound = 5;
+            gameState.r5Index = 0;
+            gameState.scores.r5 = 0;
+            updateRoleDisplay(5);
+            showScreen('screen-round5');
+            renderRound5Question();
+        }
+
+        function renderRound5Question() {
+            clearInterval(gameState.r5Timer);
+            const q = gameState.r5Questions[gameState.r5Index];
+
+            document.getElementById('score-r5').textContent = gameState.scores.r5;
+            document.getElementById('r5-q-number').textContent = `Soal ${gameState.r5Index + 1} dari ${gameState.r5Questions.length}`;
+            document.getElementById('r5-question-text').textContent = q.q;
+
+            // Render Fast Choices
+            const container = document.getElementById('r5-choices');
+            container.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "pid-button bg-rose-100 hover:bg-rose-200 border-2 border-rose-400 text-rose-950 font-black text-xl py-5 px-4 rounded-2xl";
+                btn.textContent = opt;
+                btn.onclick = () => handleRound5Answer(opt);
+                container.appendChild(btn);
+            });
+
+            // Start 10s Timer
+            gameState.r5TimeLeft = 10;
+            updateR5TimerUI();
+
+            speakText(`${q.q}`);
+
+            gameState.r5Timer = setInterval(() => {
+                gameState.r5TimeLeft--;
+                updateR5TimerUI();
+                if (gameState.r5TimeLeft > 0) playSound('tick');
+
+                if (gameState.r5TimeLeft <= 0) {
+                    clearInterval(gameState.r5Timer);
+                    playSound('wrong');
+                    showModal('⏱️ Waktu Habis!', 'Mari lanjut ke soal berikutnya!', '⌛', () => {
+                        nextRound5Question();
+                    });
+                }
+            }, 1000);
+        }
+
+        function updateR5TimerUI() {
+            document.getElementById('r5-timer-text').textContent = gameState.r5TimeLeft;
+            const bar = document.getElementById('r5-timer-bar');
+            bar.style.width = `${(gameState.r5TimeLeft / 10) * 100}%`;
+        }
+
+        function handleRound5Answer(selected) {
+            clearInterval(gameState.r5Timer);
+            const q = gameState.r5Questions[gameState.r5Index];
+
+            if (selected === q.correct) {
+                playSound('correct');
+                gameState.scores.r5 += 10;
+                document.getElementById('score-r5').textContent = gameState.scores.r5;
+                showModal('⚡ Cepat & Tepat!', '+10 Poin!', '⚡', () => {
+                    nextRound5Question();
+                });
+            } else {
+                playSound('wrong');
+                showModal('🔎 Kurang Tepat', `Jawaban yang tepat adalah: ${q.correct}`, '💡', () => {
+                    nextRound5Question();
+                });
+            }
+        }
+
+        function nextRound5Question() {
+            gameState.r5Index++;
+            if (gameState.r5Index < gameState.r5Questions.length) {
+                renderRound5Question();
+            } else {
+                showFinalResults();
+            }
+        }
+
+        /* ==========================================================================
+           10. HASIL AKHIR & REFLEKSI
+           ========================================================================== */
+        function showFinalResults() {
+            showScreen('screen-result');
+            playSound('victory');
+
+            // Trigger confetti canvas celebration
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            }
+
+            document.getElementById('tally-r1').textContent = gameState.scores.r1;
+            document.getElementById('tally-r2').textContent = gameState.scores.r2;
+            document.getElementById('tally-r3').textContent = gameState.scores.r3;
+            document.getElementById('tally-r4').textContent = gameState.scores.r4;
+            document.getElementById('tally-r5').textContent = gameState.scores.r5;
+
+            const total = gameState.scores.r1 + gameState.scores.r2 + gameState.scores.r3 + gameState.scores.r4 + gameState.scores.r5;
+            document.getElementById('total-score').textContent = `${total} Poin`;
+
+            // Assign Positive Badges (No shaming)
+            const badges = [
+                { title: '🌟 Detektif Hebat & Kompak', desc: 'Bekerja sama dengan sangat kompak dan teliti!' },
+                { title: '🔎 Detektif Teliti & Cermat', desc: 'Sangat jeli menemukan dan membenarkan kesalahan!' },
+                { title: '💪 Detektif Pantang Menyerah', desc: 'Selalu berani mencoba hingga perisai tersusun tepat!' }
+            ];
+            const badge = badges[Math.floor(Math.random() * badges.length)];
+            document.getElementById('badge-title').textContent = badge.title;
+            document.getElementById('badge-desc').textContent = badge.desc;
+
+            speakText(`Selamat! Kelompokmu meraih total ${total} poin dan mendapatkan penghargaan ${badge.title}`);
+        }
+
+        function goToReflection() {
+            showScreen('screen-reflection');
+            speakText("Refleksi kelompok. Bagaimana perasaanmu setelah bermain?");
+        }
+
+        function selectMood(btn) {
+            document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('border-emerald-500', 'bg-emerald-200'));
+            btn.classList.add('border-emerald-500', 'bg-emerald-200');
+            playSound('correct');
+        }
+
+        /* Initialize screen on window load */
+        window.onload = function() {
+            goToHome();
+        };
+    </script>
+</body>
+</html>
